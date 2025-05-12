@@ -1,10 +1,10 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
-const serverless = require('serverless-http');
 require('dotenv').config();
 
 const app = express();
+const port = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
@@ -63,7 +63,7 @@ app.get('/api/social-data', async (req, res) => {
 
     const response = await axios.get('https://lunarcrush.com/api4/public/coins/1/time-series/v2', {
       headers: {
-        Authorization: `Bearer ${process.env.LUNARCRUSH_BEARER_TOKEN}`,
+        'Authorization': `Bearer ${LUNARCRUSH_BEARER_TOKEN}`,
       },
       params: {
         bucket: 'minute',
@@ -233,8 +233,6 @@ app.get('/api/social-data', async (req, res) => {
   }
 }); 
 
-// app.listen(port, () => {
-//     console.log(`Server running on port ${port}`);
-// });
-
-module.exports.handler = serverless(app);
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+});
