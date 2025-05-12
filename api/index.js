@@ -1,10 +1,10 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+const serverless = require('serverless-http');
 require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
@@ -233,6 +233,8 @@ app.get('/api/social-data', async (req, res) => {
   }
 }); 
 
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
+// app.listen(port, () => {
+//     console.log(`Server running on port ${port}`);
+// });
+
+module.exports.handler = serverless(app);
