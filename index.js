@@ -32,19 +32,71 @@ app.use(express.json());
 const LUNARCRUSH_BEARER_TOKEN = process.env.LUNARCRUSH_BEARER_TOKEN;
 
 // Endpoint to fetch BTC news or social data
+// app.get('/api/btc-data', async (req, res) => {
+//   console.log('Server accessed: /api/btc-data');
+//   try {
+//     const response = await axios({
+//       url: 'https://lunarcrush.com/api4/public/topic/bitcoin/news/v1',
+//       headers: {
+//         Authorization: `Bearer ${LUNARCRUSH_BEARER_TOKEN}`,
+//       },
+//     });
+//     res.json(response.data);
+//   } catch (error) {
+//     console.error('Error fetching LunarCrush data:', error.message);
+//     res.status(500).json({ error: 'Failed to fetch data' });
+//   }
+// });
+
+
 app.get('/api/btc-data', async (req, res) => {
   console.log('Server accessed: /api/btc-data');
   try {
     const response = await axios({
-      url: 'https://lunarcrush.com/api4/public/topic/bitcoin/news/v1',
+      url: 'https://lunarcrush.com/api4/public/topic/bitcoin/posts/v1',
       headers: {
         Authorization: `Bearer ${LUNARCRUSH_BEARER_TOKEN}`,
       },
+      params: {
+        limit: 50, // Fetch up to 50 posts
+      },
+      timeout: 10000,
     });
-    res.json(response.data);
+
+    const posts = response.data.data || [];
+    if (!Array.isArray(posts)) {
+      console.error('Invalid posts data:', response.data);
+      return res.status(500).json({ error: 'Invalid data from LunarCrush' });
+    }
+
+    // Categorize posts by follower count
+    const regularUsers = posts.filter(post => post.creator_followers <= 10000);
+    const influencers = posts.filter(post => post.creator_followers > 10000);
+
+    // Balance the output: up to 10 from each group
+    const balancedPosts = [
+      ...regularUsers.slice(0, 10),
+      ...influencers.slice(0, 10),
+    ].slice(0, 20); // Cap at 20 total
+
+    // Transform to LunarCrushPost format
+    const formattedPosts = balancedPosts.map(post => ({
+      creator_avatar: post.creator_avatar || 'https://default-avatar.png',
+      creator_display_name: post.creator_display_name || post.creator_name || 'Anonymous',
+      creator_name: post.creator_name || 'unknown',
+      creator_followers: post.creator_followers || 0,
+      post_title: post.post_title || post.body || 'No content available',
+      post_link: post.post_link || `https://x.com/${post.creator_name}/status/${post.post_id || ''}`,
+    }));
+
+    console.log(`Returning ${formattedPosts.length} posts`);
+    res.json({ data: formattedPosts });
   } catch (error) {
-    console.error('Error fetching LunarCrush data:', error.message);
-    res.status(500).json({ error: 'Failed to fetch data' });
+    console.error('Error fetching LunarCrush data:', error.message, error.response?.data);
+    if (error.response?.status === 429) {
+      return res.status(429).json({ error: 'Rate limit exceeded. Please try again later.' });
+    }
+    res.status(500).json({ error: 'Failed to fetch data from LunarCrush' });
   }
 });
 
