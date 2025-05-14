@@ -75,9 +75,9 @@ app.get('/api/btc-data', async (req, res) => {
 
     // Balance the output: up to 10 from each group
     const balancedPosts = [
-      ...regularUsers.slice(0, 10),
-      ...influencers.slice(0, 10),
-    ].slice(0, 20); // Cap at 20 total
+      ...regularUsers.slice(0, 50),
+      ...influencers.slice(0, 50),
+    ].slice(0, 100); // Cap at 20 total
 
     // Transform to LunarCrushPost format
     const formattedPosts = balancedPosts.map(post => ({
